@@ -11,19 +11,20 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      # This prevents pnpm from panicking when it can't find a root package.json
+      NPM_CONFIG_IGNORE_WORKSPACE_ROOT_CHECK: true
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
-      # Install pnpm, but tell it NOT to run install automatically
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 11
           run_install: false
 
-      # Setup Node with wildcard cache path
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -31,18 +32,17 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: "**/pnpm-lock.yaml"
 
-      # Manual targeted installation
       - name: Install Dependencies
         run: |
-          pnpm install --frozen-lockfile --prefix backend
-          pnpm install --frozen-lockfile --prefix frontend
+          cd backend && pnpm install --frozen-lockfile
+          cd ../frontend && pnpm install --frozen-lockfile
 
       - name: Build Next.js Backend
         run: |
           if git diff --quiet HEAD^ HEAD ./backend; then
             echo "No changes in backend. Skipping..."
           else
-            pnpm run build --prefix backend
+            cd backend && pnpm run build
           fi
 
       - name: Build Vite Frontend
@@ -50,5 +50,5 @@ jobs:
           if git diff --quiet HEAD^ HEAD ./frontend; then
             echo "No changes in frontend. Skipping..."
           else
-            pnpm run build --prefix frontend
+            cd frontend && pnpm run build
           fi
