@@ -4,41 +4,51 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'backend/**'
-      - 'extension/**'
-      - '.github/workflows/ci.yml' # Run if the CI itself changes
+      - "backend/**"
+      - "frontend/**"
+      - ".github/workflows/ci.yml"
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      # This prevents pnpm from panicking when it can't find a root package.json
+      NPM_CONFIG_IGNORE_WORKSPACE_ROOT_CHECK: true
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2 # Faster checkout
+          fetch-depth: 2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+          run_install: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: "npm"
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: "**/pnpm-lock.yaml"
 
       - name: Install Dependencies
-        run: npm ci
+        run: |
+          cd backend && pnpm install --frozen-lockfile
+          cd ../frontend && pnpm install --frozen-lockfile
 
-      # Only builds the backend if changes were detected in the backend folder
       - name: Build Next.js Backend
         run: |
           if git diff --quiet HEAD^ HEAD ./backend; then
             echo "No changes in backend. Skipping..."
           else
-            npm run build --prefix backend
+            cd backend && pnpm run build
           fi
 
-      # Only builds the extension if changes were detected in the extension folder
-      - name: Build Chrome Extension
+      - name: Build Vite Frontend
         run: |
-          if git diff --quiet HEAD^ HEAD ./extension; then
-            echo "No changes in extension. Skipping..."
+          if git diff --quiet HEAD^ HEAD ./frontend; then
+            echo "No changes in frontend. Skipping..."
           else
-            npm run build --prefix extension
+            cd frontend && pnpm run build
           fi
