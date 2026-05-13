@@ -4,6 +4,7 @@ function App() {
   return (
     <>
       <div className="text-3xl font-bold underline">Frontend</div>
+      <h1>Built using Vite</h1>
     </>
   );
 }
