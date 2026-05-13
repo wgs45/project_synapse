@@ -6,7 +6,7 @@ on:
     paths:
       - "backend/**"
       - "extension/**"
-      - ".github/workflows/ci.yml" # Run if the CI itself changes
+      - ".github/workflows/ci.yml"
 
 jobs:
   build-and-test:
@@ -14,18 +14,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2 # Faster checkout
+          fetch-depth: 2
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      # Setup Node and point it to the pnpm cache
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "26"
+          node-version: "24" # Recommended LTS for 2026 stability
           cache: "pnpm"
 
       - name: Install Dependencies
-        run: pnpm ci
+        run: pnpm install --frozen-lockfile # Correct command for CI
 
-      # Only builds the backend if changes were detected in the backend folder
       - name: Build Next.js Backend
         run: |
           if git diff --quiet HEAD^ HEAD ./backend; then
@@ -34,10 +39,9 @@ jobs:
             pnpm run build --prefix backend
           fi
 
-      # Only builds the extension if changes were detected in the extension folder
       - name: Build Chrome Extension
         run: |
-          if git diff --quiet HEAD^ HEAD ./frontend; then
+          if git diff --quiet HEAD^ HEAD ./extension; then
             echo "No changes in extension. Skipping..."
           else
             pnpm run build --prefix extension
