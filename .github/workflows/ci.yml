@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - "backend/**"
-      - "extension/**"
+      - "frontend/**"
       - ".github/workflows/ci.yml"
 
 jobs:
@@ -21,15 +21,19 @@ jobs:
         with:
           version: 11
 
-      # Setup Node and point it to the pnpm cache
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24" # Recommended LTS for 2026 stability
+          node-version: "24"
           cache: "pnpm"
+          # Since have two pnpm-lock, using a wildcard is safer
+          cache-dependency-path: "**/pnpm-lock.yaml"
 
       - name: Install Dependencies
-        run: pnpm install --frozen-lockfile # Correct command for CI
+        # Since pnpm is being used in subdirectories, run install for both
+        run: |
+          pnpm install --frozen-lockfile --prefix backend
+          pnpm install --frozen-lockfile --prefix frontend
 
       - name: Build Next.js Backend
         run: |
@@ -39,10 +43,11 @@ jobs:
             pnpm run build --prefix backend
           fi
 
-      - name: Build Chrome Extension
+      - name: Build Vite Frontend
         run: |
-          if git diff --quiet HEAD^ HEAD ./extension; then
-            echo "No changes in extension. Skipping..."
+          if git diff --quiet HEAD^ HEAD ./frontend; then
+            echo "No changes in frontend. Skipping..."
           else
-            pnpm run build --prefix extension
+            # Corrected prefix to match your folder name
+            pnpm run build --prefix frontend
           fi
