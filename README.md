@@ -1,3 +1,3 @@
-# Project: Synapse
+# Project: Prism
 
 AI Summarizer
