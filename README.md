@@ -1,2 +1,3 @@
-# project_synapse
+# Project: Synapse
+
 AI Summarizer
